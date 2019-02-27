@@ -1,4 +1,6 @@
 # obinsMacrosConverter
+*a 10ms a
+MAJ a 10ms a MAJ*
 
 ## Time
 
