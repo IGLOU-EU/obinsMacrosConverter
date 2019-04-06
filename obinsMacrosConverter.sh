@@ -35,26 +35,17 @@ function get_args()
     fi
 }
 
-function replace_num()
+function replace_list()
 {
-    local _str=$1
+    local _str="$1"
+    local _list="$2"
     local _buff=""
+    local _char=""
 
     while read -n1 chr; do
-      if [[ ${num_list["$chr"]} ]]; then _buff+="${num_list[$chr]}"
-      else _buff+="${chr}"; fi
-    done < <(echo -n "$_str")
+      _char="${_list}[\"$chr\"]"
 
-    echo "$_buff"
-}
-
-function replace_chr()
-{
-    local _str=$1
-    local _buff=""
-
-    while read -n1 chr; do
-      if [[ ${chr_list["$chr"]} ]]; then _buff+="${chr_list[$chr]}"
+      if [[ ${!_char} ]]; then _buff+="${!_char}"
       else _buff+="${chr}"; fi
     done < <(echo -n "$_str")
 
@@ -67,9 +58,9 @@ function render()
 
     _buff="$(echo "${_buff}" | sed -e ':a' -e 'N' -e '$!ba' -e "${reg_spe}")"
     _buff="$(echo "${_buff}" | sed "s/ /\[\.SPACE\]/g;")"
-    _buff="$(replace_num "$_buff")"
+    _buff="$(replace_list "$_buff" "num_list")"
     _buff="$(echo "${_buff}" | sed "${special}")"
-    _buff="$(replace_chr "$_buff")"
+    _buff="$(replace_list "$_buff" "chr_list")"
 
     buff="[${_buff:1}]"
 }
