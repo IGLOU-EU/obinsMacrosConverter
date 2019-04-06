@@ -20,49 +20,18 @@ function help()
 {
 cat <<USAGE
 
-    Usage: $0 -i <path> -o <path>
-
-      -h         Show usage.
-      -i         InPut  file.
-      -o         OutPut file
+    Usage: $0 <input file path>
 
 USAGE
 }
 
-function parsing_args()
+function get_args()
 {
-    if [ $# -ne 4 ]; then help; exit 1; fi
+    if [ $# -ne 1 ]; then help; exit 1; fi
 
-    while [ $# -ne 0 ]; do
-        case "$1" in
-            "-i")
-                shift
-                in="$1"
-                ;;
-            "-o")
-                shift
-                out="$1"
-                ;;
-            *)
-                echo "Unknown option $1"
-                help
-                exit 1
-                ;;
-        esac
-
-        shift
-    done
-}
-
-function check_args()
-{
+    in="$1"
     if [[ ! -r $in ]]; then
-        err "Unable to read '${out}'"
-    fi
-
-    if [[ ! -w $out ]]; then
-        if [[ -w ${out%/*} ]]; then touch "$out"
-        else err "Unable to write file '${out}'"; fi
+        err "Unable to read '${in}'"
     fi
 }
 
@@ -105,7 +74,7 @@ function render()
     buff="[${_buff:1}]"
 }
 
-parsing_args $@
-check_args
+get_args $@
 render
-echo "$buff" > "$out"
+echo "$buff"
+
