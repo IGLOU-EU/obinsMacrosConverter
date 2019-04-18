@@ -20,14 +20,15 @@ function help()
 {
 cat <<USAGE
 
-    Usage: $0 <input file path>
+    Usage: $0 <input file path> [--sqlite]
 
 USAGE
 }
 
 function get_args()
 {
-    if [ $# -ne 1 ]; then help; exit 1; fi
+#    if [ $# -ne 2 ]; then help; exit 1;
+#    elif [ $# -ne 1 ]; then help; exit 1; fi
 
     in="$1"
     if [[ ! -r $in ]]; then
@@ -65,7 +66,53 @@ function render()
     buff="[${_buff:1}]"
 }
 
+to_sqlite()
+{
+    local _id=""
+    local _group=""
+    local _trigger=""
+    local _sqlite_db=""
+
+    local _buff=""
+
+    while true; do
+        echo -e "\nWhereis obin db (default ~/.config/Obinslab Starter/Run.core) :"
+        read _sqlite_db
+        [[ -w $_sqlite_db ]] || echo "Can't write on : $_sqlite_db"
+        _buff="$(sqlite3 "$_sqlite_db" "SELECT name FROM sqlite_master" 2>&1)"
+        [ $? -eq 0 ] && break || echo "$_buff"
+    done
+
+    while true; do
+        echo -e "\nSelect group ID (ID|NAME) :"
+        sqlite3 "$_sqlite_db" "SELECT * FROM kbd_macro_group;"
+        read _group
+        _buff="$(sqlite3 "$_sqlite_db" "SELECT id FROM kbd_macro_group WHERE id=${_group};" 2>&1)"
+        [[ $_buff -gt 0 ]] 2> /dev/null && break || echo "Group ID not foud : $_group"
+    done
+
+    while true; do
+        echo -e "\nTrigger ID (See README.md) :"
+        read _trigger
+        if [[ ! "$_trigger" -gt 0 ]] 2> /dev/null; then echo "Invalid ID : $_trigger"; continue; fi
+        _buff="$(sqlite3 "$_sqlite_db" "SELECT * FROM kbd_macro WHERE trigger=${_trigger};" 2>&1)"
+        [[ -z $_buff ]] && break || echo "Trigger already used : $_trigger"
+    done
+
+    _id="$(sqlite3 "$_sqlite_db" "SELECT id FROM kbd_macro order by ROWID DESC limit 1;" 2>&1)"
+    _id=$((_id+1))
+
+    cp "$_sqlite_db" "$_sqlite_db.back"
+    _buff="$(sqlite3 "$_sqlite_db" "INSERT INTO kbd_macro VALUES (${_id}, ${_group}, ${_trigger}, '${buff}');" 2>&1)"
+    [ $? -eq 0 ] && echo -e "\nMacro writed !" || echo "Fail : $_buff"
+}
+
 get_args $@
 render
-echo "$buff"
+
+if [[ $2 == "--sqlite" ]]; then
+    to_sqlite
+else
+    echo "$buff"
+fi
 
